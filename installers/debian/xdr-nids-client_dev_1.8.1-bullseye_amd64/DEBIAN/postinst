@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Copyright : Whizhack Technologies, India
+# Authors   : Team Devops
+
+#Installing pip3 requirements from requirements.txt file
+package_installer () {
+    pip3 install -r /etc/zh-xdr-nids-client/requirements.txt --upgrade;
+}
+
+#Enabling the xdr-nids service
+systemctl_refresh () {
+    sudo systemctl daemon-reload &&
+    sudo systemctl restart cron;
+    sudo systemctl enable xdr-nids-net;
+}
+
+change_ownership () {
+    sudo chown root:root /etc/cron.d/zh-xdr-nids-client;
+}
+
+main () {
+    package_installer &&
+    change_ownership &&	    
+    systemctl_refresh
+}
+
+main
+

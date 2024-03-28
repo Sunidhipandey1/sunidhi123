@@ -1,0 +1,6 @@
+version: "3.5"
+
+services:
+  listener:
+    build: listener/
+    image: 279920935932.dkr.ecr.us-east-1.amazonaws.com/listener:production

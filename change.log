@@ -1,0 +1,9 @@
+# New Update
+# cron.d chnages
+# hiiii
+Run 3 - ids update and asset profiler removed 
+Run 4 - fixed ai thresholds
+5) Reverted the suricata rule engine to OPEN
+6) updates external-external attack data-pipeline
+7) removed lua from suricata dockerfile
+8) fixed target port field mapping

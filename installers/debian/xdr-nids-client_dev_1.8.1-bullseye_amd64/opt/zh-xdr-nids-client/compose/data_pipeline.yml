@@ -1,0 +1,107 @@
+version: "3.5"
+volumes:
+  data:
+  
+services:
+  init:
+    image: ubuntu
+    command: bash -c "mkdir -p /var/log/data/{raw_data,parted_data}/{listener,ids} && mkdir -p /var/log/data/normalized_data/{listener,ids} && mkdir -p /var/log/data/processed_data/"
+    volumes:
+      - data:/var/log/data/
+      
+  ids:
+    container_name: ids
+    restart: always
+    network_mode: "host"
+    build: 
+      context: ./docker/ids/.
+      dockerfile: Dockerfile
+    #image: "406116439221.dkr.ecr.us-east-2.amazonaws.com/ids_xdr_nids:dev_amd64_1.8.1"
+    cap_add:
+     - NET_ADMIN
+     - SYS_NICE
+     - NET_RAW
+    volumes:
+      - data:/var/log/data/
+    env_file:
+      - /etc/zh-xdr-nids-client/config.env
+    depends_on:
+      - init
+
+  listener:
+    container_name: listener
+    build: 
+      context: ./docker/listener/.
+      dockerfile: Dockerfile
+    #image: "406116439221.dkr.ecr.us-east-2.amazonaws.com/listener_xdr_nids:dev_amd64_1.8.1"
+    restart: always
+    network_mode: "host"
+    volumes:
+      - data:/var/log/data/
+    env_file:
+     - /etc/zh-xdr-nids-client/config.env
+    depends_on:
+      - init
+
+  forwarder:
+    container_name: forwarder
+    restart: always
+    build: 
+      context: ./docker/forwarder/.
+      dockerfile: Dockerfile
+    #image: "406116439221.dkr.ecr.us-east-2.amazonaws.com/forwarder_xdr_nids:dev_amd64_1.8.1"
+    env_file:
+     - /etc/zh-xdr-nids-client/config.env
+    volumes:
+      - data:/var/log/data/
+    depends_on:
+      - listener
+      - ids
+
+  normalizer:
+    container_name: normalizer
+    restart: always
+    build: 
+      context: ./docker/normalizer/.
+      dockerfile: Dockerfile
+    #image: "406116439221.dkr.ecr.us-east-2.amazonaws.com/normalizer_xdr_nids:dev_amd64_1.8.1"
+    volumes: 
+      - data:/var/log/data/
+    depends_on:
+      - forwarder
+
+  data_pipeline:
+    container_name: data_pipeline
+    restart: always
+    build: 
+      context: ./docker/data_pipeline/.
+      dockerfile: Dockerfile
+    #image: "406116439221.dkr.ecr.us-east-2.amazonaws.com/data_pipeline_xdr_nids:dev_amd64_1.8.1"
+    volumes:
+      - data:/var/log/data/
+    env_file:
+     - /etc/zh-xdr-nids-client/config.env 
+    depends_on:
+      - normalizer
+  
+  discovery_pipeline:
+    container_name: discovery_pipeline
+    restart: always
+    build: 
+      context: ./docker/discovery_pipeline/.
+      dockerfile: Dockerfile
+    #image: "406116439221.dkr.ecr.us-east-2.amazonaws.com/discovery_pipeline_xdr_nids:dev_amd64_1.8.1"
+    network_mode: "host"
+    cap_add:
+     - NET_ADMIN
+     - SYS_NICE
+     - NET_RAW
+    volumes:
+      - data:/var/log/data
+    env_file:
+     - /etc/zh-xdr-nids-client/config.env
+    depends_on:
+      - forwarder
+
+  
+

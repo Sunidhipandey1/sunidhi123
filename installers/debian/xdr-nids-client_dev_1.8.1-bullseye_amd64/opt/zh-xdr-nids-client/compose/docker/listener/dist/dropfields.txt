@@ -1,0 +1,53 @@
+#============================================
+# Flags in ethernet layer.
+#============================================
+eth.lg
+eth.ig
+eth.padding
+eth.addr_resolved
+eth.type
+eth.addr
+eth.dst_resolved
+eth.src_resolved
+#============================================
+# Flags in IP layer.
+#============================================
+ip.dst
+ip.host
+ip.addr
+ip.src
+#============================================
+# Flags in TCP/UDP layer.
+#============================================
+tcp.payload
+udp.payload
+tcp.segment_data
+tcp.reassembled.data
+#============================================
+# Flags in Application layer.
+#============================================
+#---------------------
+# SSH flags.
+#---------------------
+ssh.encrypted_packet
+#---------------------
+# HTTP flags.
+#---------------------
+tls.handshake.extensions_padding_data
+tls.handshake.random
+tls.app_data
+http.file_data
+tls.sct.sct_signature
+tls.handshake.certificate
+ssl.handshake.certificate
+ssl.app_data
+ssl.handshake.sig
+ssl.sct.sct_logid
+data
+data.data
+#---------------------
+# Kerberos flags.
+#---------------------
+x509af.subjectPublicKey
+x509af.encrypted
+pkcs1.modulus

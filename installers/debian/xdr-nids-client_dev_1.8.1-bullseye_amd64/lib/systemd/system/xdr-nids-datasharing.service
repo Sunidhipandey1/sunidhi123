@@ -1,0 +1,20 @@
+[Unit]
+Description=xdr-nids-datasharing
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=always
+RestartSec=5
+TimeoutSec=infinity
+
+
+# Stopping already running docker services.
+ExecStartPre=-docker-compose -f /opt/zh-xdr-nids-client/compose/data_sharing.yml down -v
+ExecStartPre=-docker-compose -f /opt/zh-xdr-nids-client/compose/data_sharing.yml rm -v
+ExecStartPre=docker-compose -f /opt/zh-xdr-nids-client/compose/data_sharing.yml pull
+ExecStart=docker-compose -f /opt/zh-xdr-nids-client/compose/data_sharing.yml up
+ExecStop=docker-compose -f /opt/zh-xdr-nids-client/compose/data_sharing.yml down -v
+
+[Install]
+WantedBy=multi-user.target

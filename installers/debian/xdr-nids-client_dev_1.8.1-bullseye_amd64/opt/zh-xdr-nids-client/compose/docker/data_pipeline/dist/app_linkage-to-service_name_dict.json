@@ -1,0 +1,95 @@
+{"service_name":"DNS","new_service_name":"Domain Resolution"}
+{"service_name":"_WS.SHORT","new_service_name":"Not Available"}
+{"service_name":"SSH","new_service_name":"SSH"}
+{"service_name":"SMB2","new_service_name":"SMB"}
+{"service_name":"ICMP","new_service_name":"ICMP"}
+{"service_name":"DCERPC","new_service_name":"Distributed RPC"}
+{"service_name":"SRVSVC","new_service_name":"Server Service"}
+{"service_name":"NBSS","new_service_name":"Net BIOS"}
+{"service_name":"NTP","new_service_name":"NTP"}
+{"service_name":"SMB","new_service_name":"SMB"}
+{"service_name":"TCP","new_service_name":"TCP"}
+{"service_name":"URLENCODED-FORM","new_service_name":"Encoded Form Info"}
+{"service_name":"VSSMONITORING","new_service_name":"Virtual Switch Info"}
+{"service_name":"SIP","new_service_name":"SIP"}
+{"service_name":"DATA","new_service_name":"Unknown Service"}
+{"service_name":"_WS.MALFORMED","new_service_name":"Not Available"}
+{"service_name":"SSL","new_service_name":"SSL"}
+{"service_name":"HTTP","new_service_name":"HTTP"}
+{"service_name":"DATA-TEXT-LINES","new_service_name":"Unencrypted Communication"}
+{"service_name":"VNC","new_service_name":"VNC"}
+{"service_name":"CLASSICSTUN","new_service_name":"Virtual NAT Tunnel"}
+{"service_name":"SSDP","new_service_name":"SSDP"}
+{"service_name":"ISAKMP","new_service_name":"Key Management"}
+{"service_name":"MEDIA","new_service_name":"Cisco UCM"}
+{"service_name":"BOOTP","new_service_name":"BOOTP"}
+{"service_name":"TELNET","new_service_name":"TELNET"}
+{"service_name":"ENIP","new_service_name":"ICS Info Exchange"}
+{"service_name":"SNMP","new_service_name":"SNMP"}
+{"service_name":"MEMCACHE","new_service_name":"Memory Caching"}
+{"service_name":"TFTP","new_service_name":"TFTP"}
+{"service_name":"IRC","new_service_name":"IRC"}
+{"service_name":"HTTP2","new_service_name":"HTTP2"}
+{"service_name":"UDP","new_service_name":"UDP"}
+{"service_name":"SRVLOC","new_service_name":"Network Service Discovery "}
+{"service_name":"PORTMAP","new_service_name":"RPC Port Discovery"}
+{"service_name":"SMTP","new_service_name":"SMTP"}
+{"service_name":"ECAT_MAILBOX","new_service_name":"EtherCAT Mailbox"}
+{"service_name":"MYSQL","new_service_name":"MYSQL"}
+{"service_name":"LANFORGE","new_service_name":"LANFORGE"}
+{"service_name":"NBNS","new_service_name":"NBNS"}
+{"service_name":"CHARGEN","new_service_name":"CHARGEN"}
+{"service_name":"AMS","new_service_name":"Messaging Service"}
+{"service_name":"MDNS","new_service_name":"Mulicast Name Service"}
+{"service_name":"SMB_PIPE","new_service_name":"SMB Session "}
+{"service_name":"PMPROXY","new_service_name":"Perfomance Enhancing Proxy"}
+{"service_name":"NAT-PMP","new_service_name":"NAT Port Mapping"}
+{"service_name":"RX","new_service_name":"Remote File Transfer"}
+{"service_name":"COAP","new_service_name":"COAP"}
+{"service_name":"PPTP","new_service_name":"P2P Tunnel"}
+{"service_name":"RDP","new_service_name":"Windows Remote Desktop"}
+{"service_name":"X11","new_service_name":"Linux Remote Desktop"}
+{"service_name":"STUN","new_service_name":"NAT  Network Discovery"}
+{"service_name":"OPA.FE","new_service_name":"Open Policy Agent  Communication"}
+{"service_name":"GTP","new_service_name":"GPRS Tunneling"}
+{"service_name":"TDS","new_service_name":"Tabular Data Stream"}
+{"service_name":"IMAP","new_service_name":"IMAP"}
+{"service_name":"OPENVPN","new_service_name":"VPN"}
+{"service_name":"BFD","new_service_name":"Network device connectivity check"}
+{"service_name":"LLMNR","new_service_name":"Link-Local Multicast Name Resolution"}
+{"service_name":"XML","new_service_name":"XML Protocol"}
+{"service_name":"SIGCOMP","new_service_name":"Signaling Compression"}
+{"service_name":"XDMCP","new_service_name":"Linux Remote Desktop "}
+{"service_name":"JSON","new_service_name":"Not Available"}
+{"service_name":"EPMD","new_service_name":"Service Discovery"}
+{"service_name":"ESP","new_service_name":"Not Available"}
+{"service_name":"BITTORRENT","new_service_name":"BITTORRENT"}
+{"service_name":"IPP","new_service_name":"Printer Service"}
+{"service_name":"RIP","new_service_name":"RIP"}
+{"service_name":"DTLS","new_service_name":"Not Available"}
+{"service_name":"CLDAP","new_service_name":"Connectionless LDAP"}
+{"service_name":"RADIUS","new_service_name":"Remote Authentication Service"}
+{"service_name":"POP","new_service_name":"POP"}
+{"service_name":"L2TP","new_service_name":"Layer 2 Tunnel"}
+{"service_name":"SOCKS","new_service_name":"SOCKS"}
+{"service_name":"GTPV2","new_service_name":"GPRS Tunneling"}
+{"service_name":"RTSP","new_service_name":"Real-Time Streaming"}
+{"service_name":"KNX","new_service_name":"IoT Device Communication"}
+{"service_name":"IMF","new_service_name":"SMTP"}
+{"service_name":"MQTT","new_service_name":"MQTT"}
+{"service_name":"EPL","new_service_name":"EtherCAT Process"}
+{"service_name":"ASTERIX","new_service_name":"ASTERIX"}
+{"service_name":"GSM_IPA","new_service_name":" GSM over IP"}
+{"service_name":"GDSDB","new_service_name":"Firebird DB "}
+{"service_name":"ECHO","new_service_name":"ICMP Echo"}
+{"service_name":"STEAM_IHS_DISCOVERY","new_service_name":"Steam In-Home Streaming"}
+{"service_name":"AYIYA","new_service_name":" IPv6-in-IPv4 tunneling"}
+{"service_name":"TPKT","new_service_name":"Remote Virtual Terminal "}
+{"service_name":"IORAW","new_service_name":"Not Available"}
+{"service_name":"RSIP","new_service_name":"RSIP"}
+{"service_name":"104APCI","new_service_name":"SCADA  Information (IEC-104)"}
+{"service_name":"WSP","new_service_name":"Wireless Session"}
+{"service_name":"ELCOM","new_service_name":"ICS Data Exchange"}
+{"service_name":"XMPP","new_service_name":"XMPP"}
+{"service_name":"WSDL ","new_service_name":"WSDL "}
+{"service_name":"SOAP","new_service_name":"SOAP"}

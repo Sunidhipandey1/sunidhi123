@@ -1,0 +1,66 @@
+######################## Kindly fill the following details. * ####################################
+SENSOR_ACCESS_ID: ""
+
+# The server where XDR management center is located.
+CONTROL_SERVER_DOMAIN: ""
+
+# Preffered interface to listen the traffic. Check with "ip a" in case of linux.
+PREFERRED_INT: ""
+
+# Specify the IPs that require whitelisting as follows, using commas to separate multiple IPs, for example: [10.0.0.1, 10.0.0.2].
+IP: [] 
+
+###################################################################################################
+
+############## !! Do not make any changes in the following parameters !! ##########################
+############## These details will get updated automatically from our backend database. ############
+
+# The server where all the threat deception logs are stored.
+AGGREGATOR_DOMAIN: ""
+AGGREGATOR_PORT: ""
+
+# These details are used in license management. Fill here your sensor keys.
+# Registration_details
+SENSOR_TYPE: ""
+SENSOR_ID: ""
+SENSOR_NAME: ""
+
+# Details for the registry server from where we download the software.
+# WARNING Do not change the regsitry details unless you are inside an airgapped environment. This *will* cause failures in software download.
+# Registry_details:
+REGISTRY_SERVER: ""
+AWS_ACCESS_KEY_ID: ""
+AWS_SECRET_ACCESS_KEY: ""
+AWS_DEFAULT_REGION: ""
+
+# These details are used to configure sensor functionalities.
+# Sensor_details:
+EDITION: ""
+COMPANY_INDEX_NAME: ""
+LOCATION: ""
+
+# Client Location Information - not yet integrated 
+CLIENT_CITY: ""
+CLIENT_LATITUDE: "" 
+CLIENT_LONGITUDE: ""
+CLIENT_COUNTRY_CODE: ""
+CLIENT_COUNTRY_NAME: ""
+
+# License Details
+LICENSE_START_DATE: ""
+LICENSE_END_DATE: ""
+XDR_NIDS_STATUS: ""
+OPERATING_ENV: ""
+
+# For future release.**
+DATA_SHARING_MODE: ""
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,226 @@
+#!/usr/bin/env python3
+
+# Copyright   : Whizhack Technologies Pvt Ltd
+# Author      : DevOps Team
+# Description : This is the healthcheck script for xdr-nids-client version 1.8.1 installation.
+# Usage       : This script will automatically run in the background after xdr-nids-client version 1.8.1 installation 
+# Version     : 1.8.1
+
+import psutil
+import socket
+import json
+import time
+import subprocess
+import yaml
+import os, time, sys
+import speedtest
+import requests
+
+timestamp = time.time()  # Get the current Unix timestamp
+
+# Get the machine's IP address
+def get_machine_ip():
+    try:
+        # Send a GET request to the AWS metadata service to retrieve instance metadata
+        response = requests.get("http://169.254.169.254/latest/meta-data/local-ipv4", timeout=2)
+        
+        if response.status_code == 200:
+            # The private IP address is in the response content
+            private_ip = response.text
+            return private_ip
+        else:
+            return None
+    except requests.exceptions.RequestException as e:
+        return None
+
+# Get the CPU utilization as a percentage
+def get_cpu_utilization():
+    cpu_times = psutil.cpu_times_percent(interval=1)
+    user_cpu_utilization = cpu_times.user
+    return user_cpu_utilization
+
+# Get RAM utilization as a percentage
+def get_ram_utilization():
+    return psutil.virtual_memory().percent
+
+# Get disk remaining as a percentage
+def get_disk_remaining():
+    disk_usage = psutil.disk_usage('/')
+    return round(disk_usage.free / disk_usage.total * 100, 1)
+
+# Get internet speed
+def get_internet_speed():
+    try:
+        # Create an object of Speedtest class
+        st = speedtest.Speedtest()
+
+        # Get the best server
+        st.get_best_server()
+
+        # Perform download and upload speed tests
+        download_speed = st.download() / 1_000_000  # Convert to Mbps
+        upload_speed = st.upload() / 1_000_000  # Convert to Mbps
+
+        download_speed = round(download_speed, 1)
+        download_speed = int(download_speed)
+        
+        upload_speed = round(upload_speed, 1)
+        upload_speed = int(upload_speed)
+
+        return download_speed, upload_speed
+    except:
+        return None, None
+
+# Performs disk action on the basis of space left in the disk
+def perform_disk_action():
+    disk_remaining_percent = get_disk_remaining()
+    if disk_remaining_percent < 30:
+        subprocess.run(['sudo', 'docker-compose', '-f', '/opt/zh-xdr-nids-client/compose/data_pipeline.yml', 'down'])
+        subprocess.run(['sudo', 'docker', 'system', 'volume', 'prune', '--force'])
+        disk_action = "cleaning disk"
+        return disk_action
+
+    elif disk_remaining_percent < 40:
+        disk_action = "disk alert"
+        return disk_action
+
+    else:
+        disk_action = "none"
+        return disk_action
+    
+# This function checks the service status.
+def get_service_status(service_name):
+    try:
+        # Use the 'systemctl' command to check the service status
+        status = os.system(f'sudo systemctl is-active --quiet {service_name}')
+        if status == 0:  #768 means not runnning, 0 means runnng
+            status = "active"
+        else:
+            status = "inactive"
+        return status
+    except subprocess.CalledProcessError as e:
+        # Handle the case when the service is not found or other errors occur
+        return f"Error: {e}"
+
+# This function appends the data in the json file.
+def append_to_json(data):
+    directory_path = '/var/lib/docker/volumes/compose_data/_data/processed_data'
+    file_name = 'nids-health.json'
+    file_path = os.path.join(directory_path, file_name)
+
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
+        
+    # Open the JSON file and append the data
+    with open(file_path , 'a') as json_file:
+        json.dump(data, json_file)
+        json_file.write('\n')
+ 
+# This function enable and start the xdr-nids-health.service   
+def start_and_enable_service(service_name_2):
+    subprocess.run(['sudo', 'systemctl', 'enable', service_name_2])
+    subprocess.run(['sudo', 'systemctl', 'start', service_name_2])
+ 
+# This function stop and disable the xdr-nids services                   
+def stop_and_disable_service(service_name, service_name_2):
+    subprocess.run(['sudo', 'systemctl', 'stop', service_name])
+    subprocess.run(['sudo', 'systemctl', 'stop', service_name_2])
+
+    subprocess.run(['sudo', 'systemctl', 'disable', service_name])
+    subprocess.run(['sudo', 'systemctl', 'disable', service_name_2]) 
+           
+# This function checks the license status.                
+def check_license_status(service_name, yaml_path):
+    with open(yaml_path, 'r') as config_file:
+        config = yaml.safe_load(config_file)
+    if 'SENSOR_ACCESS_ID' in config:
+        sensorkey = config['SENSOR_ACCESS_ID']
+        control_server_domain = config['CONTROL_SERVER_DOMAIN']
+    else:
+        sensorkey = None
+        control_server_domain = None
+        
+    api_url = f'{control_server_domain}/api/display-multiple-decrease-license-count'
+    headers = {"sensorkey": sensorkey}
+    response = requests.get(api_url, headers=headers)
+
+    if response.status_code == 200:
+        api_data = response.json()
+        for key in api_data:
+            if key == "NIDS":
+                api_key = key
+        dict = api_data[api_key]
+        xdr_nids_status = dict['xdr_nids_status']
+        
+        if xdr_nids_status == 'inactive':
+            stop_and_disable_service(service_name)
+            return xdr_nids_status
+
+        service_running = get_service_status(service_name)
+        if service_running == 'inactive':
+            subprocess.run(['sudo', 'systemctl', 'enable', service_name])
+            subprocess.run(['sudo', 'systemctl', 'start', service_name])
+        return xdr_nids_status
+
+ 
+if __name__ == "__main__":
+    args = sys.argv
+    service_name = "xdr-nids-net.service" 
+    service_name_2 = "xdr-nids-health.service"
+    yaml_path = "/etc/zh-xdr-nids-client/config.yml"
+    while True:
+        timestamp = int(time.time() * 1000)
+        ip_address = get_machine_ip()
+        cpu_utilization = get_cpu_utilization()
+        ram_utilization = get_ram_utilization()
+        disk_remaining = get_disk_remaining()
+        disk_action = perform_disk_action()
+        license_status = check_license_status(service_name, yaml_path)
+        status = get_service_status(service_name)
+        download_speed, upload_speed = get_internet_speed()
+        data = {
+            "level_id": "1",
+            "level": "running",
+            "attack_epoch_time": timestamp,
+            "ip_address": ip_address,
+            "cpu_utilization": cpu_utilization,
+            "ram_utilization": ram_utilization,
+            "disk_remaining": disk_remaining,
+            "disk_action": disk_action,
+            "download_speed": download_speed,
+            "upload_speed": upload_speed,
+        }
+        if "Error:" in license_status:
+            data["level_id"] = "2"
+            data["level"] = "stop"
+            data["log_details"] = "Failed to check license status."
+        else:
+            data["xdr_nids_status"] = license_status
+            data["license_status"] = license_status
+
+        if "Error:" in status:
+            data["level_id"] = "2"
+            data["level"] = "stop"
+            data["log_details"] = "Failed to check xdr-nids-net status."
+        else:
+            data["sensor_service_status"] = status
+            
+        with open(yaml_path, 'r') as config_file:
+            config_data = yaml.load(config_file, Loader=yaml.FullLoader)
+            
+        if 'SENSOR_NAME' not in data:
+            data['sensor_name'] = config_data.get('SENSOR_NAME', '')    
+
+        if 'SENSOR_TYPE' not in data:
+            data['sensor_type'] = config_data.get('SENSOR_TYPE', '')
+
+        if 'SENSOR_ID' not in data:
+            data['sensor_id'] = config_data.get('SENSOR_ID', '')
+
+        append_to_json(data)
+         
+         
+        # Wait for 5 hours (18000 seconds)
+        time.sleep(18000)
+
+

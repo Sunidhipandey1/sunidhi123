@@ -1,0 +1,5 @@
+boto3==1.21.33
+botocore==1.24.33
+scapy==2.4.4
+pyshark
+pysondb

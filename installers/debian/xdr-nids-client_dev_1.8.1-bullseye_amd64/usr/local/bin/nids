@@ -1,0 +1,415 @@
+#!/usr/bin/env python3
+
+# Copyright   : Whizhack Technologies Pvt Ltd
+# Author      : Amisha Prashar
+# Description : This is the automation script for xdr-nids-client version 1.8.1 installation.
+# Usage       : Run this script using command sudo xdr [options], for options see the "read_me" section 
+# Version     : 1.8.1
+
+import subprocess
+import sys
+import yaml
+import requests
+import ast
+import string
+import random
+import time
+import os
+
+# Helping section for xdr-nids-client version 1.8.1 installation
+def read_me():
+    print('''
+=======================================================================================
+Welcome to XDR Automated Installer Help Section:-                                      
+Available Flag Options are below :                                                      
+                                                                                       
+-i | install              : Fresh Installation of xdr-nids client version 1.8.1        
+-u | uninstall            : Uninstall xdr-nids client version 1.8.1    
+-r | reconfigure          : Reconfigure the Installation of xdr-nids client version 1.8.1                
+-h | help                 : Help Section for xdr-nids client version 1.8.1             
+=======================================================================================
+     ''')
+    
+# Converting config.yml into config.env 
+def create_env_file(yaml_file_path, env_file_path):
+    with open(yaml_file_path, 'r') as yaml_file:
+        config = yaml.safe_load(yaml_file)
+
+    with open(env_file_path, 'w') as env_file:
+        for key, val in config.items():
+            env_file.write(f"{key}={val}\n")
+            
+# Initializing xdr-nids-net.service
+def service_init():
+    print("[i] Initializing xdr-nids-net.service. This usually takes around 5 minutes. If it takes longer then you have internet issues. (The duration can be longer for active directory services)")
+    subprocess.run(["sudo", "systemctl", "enable", "xdr-nids-net"])
+    subprocess.run(["sudo", "systemctl", "start", "xdr-nids-net"])
+    print("[i] xdr-nids-net.service successfully initialized.")
+    
+    subprocess.run(["sudo", "systemctl", "enable", "xdr-nids-health"])
+    subprocess.run(["sudo", "systemctl", "start", "xdr-nids-health"])
+    print("[i] xdr-nids-health.service successfully initialized.")
+    
+def service_init_with_datasharing():
+    print("[i] Initializing xdr-nids-net.service. This usually takes around 5 minutes. If it takes longer then you have internet issues. (The duration can be longer for active directory services)")
+    subprocess.run(["sudo", "systemctl", "enable", "xdr-nids-net"])
+    subprocess.run(["sudo", "systemctl", "start", "xdr-nids-net"])
+    print("[i] xdr-nids-net.service successfully initialized.")
+    
+    subprocess.run(["sudo", "systemctl", "enable", "xdr-nids-health"])
+    subprocess.run(["sudo", "systemctl", "start", "xdr-nids-health"])
+    print("[i] xdr-nids-health.service successfully initialized.")
+
+    subprocess.run(["sudo", "systemctl", "enable", "xdr-nids-datasharing"])
+    subprocess.run(["sudo", "systemctl", "start", "xdr-nids-datasharing"])
+    print("[i] xdr-nids-datasharing.service successfully initialized.")
+    
+
+# Configuring AWS
+def aws_setup():
+    # Loading the YAML file
+    with open('/etc/zh-xdr-nids-client/config.yml', 'rb') as f:
+        config = yaml.safe_load(f)
+    
+    # Accessing the variables
+    aws_default_region = config['AWS_DEFAULT_REGION']
+    access_key_id = config['AWS_ACCESS_KEY_ID']
+    secret_access_key = config['AWS_SECRET_ACCESS_KEY']
+    repository = config['REGISTRY_SERVER']
+
+    
+    # Configuring the awscli to use the provided credentials.
+    subprocess.run(["sudo", "aws", "configure", "set", "region", aws_default_region])
+    subprocess.run(["sudo", "aws", "configure", "set", "aws_access_key_id", access_key_id])
+    subprocess.run(["sudo", "aws", "configure", "set", "aws_secret_access_key", secret_access_key])
+    
+    login_pass = subprocess.check_output(["sudo", "aws", "ecr", "get-login-password", "--region", "us-east-2"]).decode("utf-8")
+
+    subprocess.check_call(["sudo", "docker", "login" , "-u", "AWS" , repository , "--password", login_pass])
+
+# Updating aws credentials 
+def credential_refresh():
+    # Loading the YAML file
+    with open('/etc/zh-xdr-nids-client/config.yml', 'rb') as f:
+        config = yaml.safe_load(f)
+    
+    # Accessing the variables
+    aws_default_region = config['AWS_DEFAULT_REGION']
+    repository = config['REGISTRY_SERVER']
+
+    # Updating the awscli.
+    subprocess.run(["sudo", "/aws/install", "--update"], check=True)
+    get_login_cmd   = ["sudo", "aws", "ecr", "get-login-password", "--region", aws_default_region]
+    login_cmd       = ["sudo", "docker", "login", "--username", "AWS", "--password-stdin", repository]
+
+    get_login_password_process = subprocess.Popen(get_login_cmd, stdout=subprocess.PIPE)
+    password, _ = get_login_password_process.communicate()
+
+    login_process = subprocess.Popen(login_cmd, stdin=subprocess.PIPE)
+    login_process.communicate(input=password)
+
+def get_service_status():
+    try:
+        # Use the 'systemctl' command to check the service status
+        status1 = os.system(f'sudo systemctl is-active --quiet xdr-nids-net')
+        status2 = os.system(f'sudo systemctl is-active --quiet xdr-nids-health')
+        if status1 == 0 and status2 == 0:  #768 means not runnning, 0 means runnng
+            print("[i] Both services are running.")
+            ############# sensor active count ##############
+            filename = '/etc/zh-xdr-nids-client/config.yml'
+            with open(filename, 'r') as config_file:
+                config = yaml.safe_load(config_file)
+            sensorkey = config['SENSOR_ACCESS_ID']
+            control_server_domain = config['CONTROL_SERVER_DOMAIN']
+            api_url = f'{control_server_domain}/api/multiple-decrease-license-count'
+            headers = {
+                'sensorkey': sensorkey ,
+                'deccount': '1'
+            }
+            response = requests.post(api_url, headers=headers)
+            ##################################################
+        else:
+            print("[i] One or both services are not running.")    
+    except subprocess.CalledProcessError as e:
+        # Handle the case when the service is not found or other errors occur
+        return f"Error: {e}"
+
+# Installing xdr-nids-client version 1.8.1 
+def install():
+    filename = "/etc/zh-xdr-nids-client/config.yml" 
+    license_check(filename)
+    
+    try:
+        #Prompting the user to fill the configuration file
+        response = input("File named 'config.yml' located at /etc/zh-xdr-nids-client/ is configured? (Y/n) ")
+        # Read the access_id from the config.yml file
+        with open(filename, 'r') as config_file:
+         config = yaml.safe_load(config_file)
+        if 'DATA_SHARING_MODE' in config:
+            datasharing_mode = config['DATA_SHARING_MODE']
+        else: 
+            print("[i] Please Initialize Sharing Mode Flag and Try Again..")
+            exit(0)
+        
+        if datasharing_mode == "enabled":
+
+            if response == "Y" or response == "y" or response == "":
+                print("[i] Initializing the installation process..")
+
+                # providing file paths and creating config.env file
+                yaml_file_path = '/etc/zh-xdr-nids-client/config.yml'
+                env_file_path = '/etc/zh-xdr-nids-client/config.env'
+                create_env_file(yaml_file_path, env_file_path)
+                aws_setup()  
+                service_init_with_datasharing()
+                time.sleep(60)
+                get_service_status()
+                
+                print("[i] Installation process completed successfully.")
+                print("[i] You can run 'sudo docker ps' to check the running containers.")
+                print("[i] Meanwhile, you can access XDR threat dashboard at http://xdr-dev.whizhack-intranet.com/login ")
+            else:
+                print("[!] Kindly fill the configuration file located at /etc/zh-xdr-nids-client/config.yml")
+                exit()
+        else: 
+        
+            if response == "Y" or response == "y" or response == "":
+                print("[i] Initializing the installation process..")
+
+                # providing file paths and creating config.env file
+                yaml_file_path = '/etc/zh-xdr-nids-client/config.yml'
+                env_file_path = '/etc/zh-xdr-nids-client/config.env'
+                create_env_file(yaml_file_path, env_file_path)
+                aws_setup()  
+                service_init()
+                time.sleep(60)
+                get_service_status()
+                
+                print("[i] Installation process completed successfully.")
+                print("[i] You can run 'sudo docker ps' to check the running containers.")
+                print("[i] Meanwhile, you can access XDR threat dashboard at http://xdr-dev.whizhack-intranet.com/login ")
+            else:
+                print("[!] Kindly fill the configuration file located at /etc/zh-xdr-nids-client/config.yml")
+                exit()
+            
+    except Exception as e:
+        print("[!] An error occurred during the installation process:")
+        print(e)        
+
+# Uninstalling xdr-nids-client version 1.8.1 
+def uninstall():
+    filename = "/etc/zh-xdr-nids-client/config.yml" 
+    try:    
+        #Prompting the user to fill the configuration file
+        response = input("Do you want to uninstall the xdr-nids setup? (Y/n) ")
+        with open(filename, 'r') as config_file:
+         config = yaml.safe_load(config_file)
+        if 'DATA_SHARING_MODE' in config:
+            datasharing_mode = config['DATA_SHARING_MODE']
+        else: 
+            print("[i] Please Initialize Sharing Mode Flag and Try Again..")
+            exit()
+        
+        if datasharing_mode == "enabled":
+
+            if response == "Y" or response == "y" or response == "":
+                print("[i] Initializing the uninstallation process")
+                filename  = '/etc/zh-xdr-nids-client/config.yml'
+                with open(filename, 'r') as config_file:
+                    config = yaml.safe_load(config_file)
+                sensorkey = config['SENSOR_ACCESS_ID']
+                control_server_domain = config['CONTROL_SERVER_DOMAIN']
+                api_url = f'{control_server_domain}/api/multiple-decrease-license-count'
+                headers = {
+                    'sensorkey': sensorkey ,
+                    'inccount': '1'
+                }
+                response = requests.post(api_url, headers=headers)
+                subprocess.run(["sudo", "systemctl", "stop", "xdr-nids-net"])
+                subprocess.run(["sudo", "systemctl", "disable", "xdr-nids-net"])
+                subprocess.run(["sudo", "systemctl", "stop", "xdr-nids-health"])
+                subprocess.run(["sudo", "systemctl", "disable", "xdr-nids-health"])
+                subprocess.run(["sudo", "systemctl", "stop", "xdr-nids-datasharing"])
+                subprocess.run(["sudo", "systemctl", "disable", "xdr-nids-datasharing"])
+                subprocess.run(["sudo", "rm", "-r", "/etc/zh-xdr-nids-client"])
+                subprocess.run(["sudo", "rm", "-r", "/opt/zh-xdr-nids-client"])
+                subprocess.run(["sudo", "apt", "autopurge", "zh-xdr-nids-client", "-y"])
+                subprocess.run(["sudo", "apt", "autoremove", "-y"])
+                subprocess.run(["sudo", "systemctl", "daemon-reload"])
+            else:
+                print("[!] Kindly input the correct option")
+                exit()    
+        else:
+            if response == "Y" or response == "y" or response == "":
+                print("[i] Initializing the uninstallation process")
+                filename  = '/etc/zh-xdr-nids-client/config.yml'
+                with open(filename, 'r') as config_file:
+                    config = yaml.safe_load(config_file)
+                sensorkey = config['SENSOR_ACCESS_ID']
+                control_server_domain = config['CONTROL_SERVER_DOMAIN']
+                api_url = f'{control_server_domain}/api/multiple-decrease-license-count'
+                headers = {
+                    'sensorkey': sensorkey ,
+                    'inccount': '1'
+                }
+                response = requests.post(api_url, headers=headers)
+                subprocess.run(["sudo", "systemctl", "stop", "xdr-nids-net"])
+                subprocess.run(["sudo", "systemctl", "disable", "xdr-nids-net"])
+                subprocess.run(["sudo", "systemctl", "stop", "xdr-nids-health"])
+                subprocess.run(["sudo", "systemctl", "disable", "xdr-nids-health"])
+                subprocess.run(["sudo", "rm", "-r", "/etc/zh-xdr-nids-client"])
+                subprocess.run(["sudo", "rm", "-r", "/opt/zh-xdr-nids-client"])
+                subprocess.run(["sudo", "apt", "autopurge", "zh-xdr-nids-client", "-y"])
+                subprocess.run(["sudo", "apt", "autoremove", "-y"])
+                subprocess.run(["sudo", "systemctl", "daemon-reload"])
+            else:
+                print("[!] Kindly input the correct option")
+                exit() 
+
+    except Exception as e:
+            print("[!] An error occurred during the uninstallation process:")
+            print(e)  
+            
+# Reconfiguring xdr-nids-client version 1.8.1 
+def reconfigure():
+    try:    
+        #Prompting the user to fill the configuration file
+        response = input("Do you want to reconfigure the xdr-nids setup? (Y/n) ")
+
+        if response == "Y" or response == "y":
+            print("[i] Initializing the reconfigure process..")
+            # providing file paths and creating config.env file
+            yaml_file_path  = '/etc/zh-xdr-nids-client/config.yml'
+            env_file_path   = '/etc/zh-xdr-nids-client/config.env'
+            create_env_file(yaml_file_path, env_file_path)
+            credential_refresh()    
+            aws_setup()
+            subprocess.run(["sudo", "systemctl", "restart", "xdr-nids-net"])
+            subprocess.run(["sudo", "systemctl", "restart", "xdr-nids-health"])
+            print("[i] Reconfigure process completed successfully.")
+            print("[i] You can run 'sudo docker ps' to check the running containers.")
+            print("[i] Meanwhile, you can access XDR threat dashboard at http://xdr-dev.whizhack-intranet.com/login ")
+        else:
+            print("[!] Kindly fill the configuration file located at /etc/zh-xdr-nids-client/config.yml")
+            exit()
+    except Exception as e:
+            print("[!] An error occurred during the installation process:")
+            print(e)        
+
+# Genearting Random ID
+def random_id():
+    characters = string.ascii_letters + string.digits
+    random_string = ''.join(random.choice(characters) for _ in range(10))
+    return random_string
+
+# Checking License        
+def license_check(filename):
+    # Read the access_id from the config.yml file
+    with open(filename, 'r') as config_file:
+        config = yaml.safe_load(config_file)
+    if 'SENSOR_ACCESS_ID' in config:
+        sensorkey = config['SENSOR_ACCESS_ID']
+        control_server_domain = config['CONTROL_SERVER_DOMAIN']
+    else:
+        sensorkey = None
+        control_server_domain = None
+    api_url = f'{control_server_domain}/api/display-multiple-decrease-license-count'
+    headers = {"sensorkey": sensorkey}
+    response = requests.get(api_url, headers=headers)
+
+    if response.status_code == 200:
+        api_data = response.json()
+        for key in api_data:
+            if key == "NIDS":
+                api_key = key
+        dict = api_data[api_key]
+        aggregator_domain = dict['aggregator_domain']
+        aggregator_port = dict['aggregator_port']
+        sensor_type = dict['sensor_type']
+        registry_server = dict['registry_server']
+        access_id = dict['access_id']
+        access_key = dict['access_key']
+        edition = dict['edition']
+        location = dict['location']
+        client_city = dict['client_city']
+        client_latitude = dict['client_latitude']
+        client_longitude = dict['client_longitude']
+        client_country_code = dict['client_country_code']
+        client_country_name = dict['client_country_name']
+        license_start_date = dict['license_start_date']
+        license_end_date = dict['license_end_date']
+        xdr_nids_status = dict['xdr_nids_status']
+        data_sharing_mode = dict['data_sharing_mode']
+        operating_env = dict['operating_env']
+        sensor_create_count = dict['sensor_create_count']
+        xdr_default_region = dict['xdr_default_region']
+        company_index_name = dict['company_index_name']
+        sensor_name = "nids-sensor"
+        sensor_id = random_id()
+         
+        if xdr_nids_status == 'active':
+            # Reading the original config.yml content
+            with open(filename, 'r') as config_file:
+                config_content = config_file.read()
+            keys_to_update = {
+                "AGGREGATOR_DOMAIN: \"\"": f"AGGREGATOR_DOMAIN: \"{aggregator_domain}\"",
+                "AGGREGATOR_PORT: \"\"": f"AGGREGATOR_PORT: \"{aggregator_port}\"",
+                "SENSOR_TYPE: \"\"": f"SENSOR_TYPE: \"{sensor_type}\"",
+                "SENSOR_ID: \"\"": f"SENSOR_ID: \"{sensor_id}\"",
+                "REGISTRY_SERVER: \"\"": f"REGISTRY_SERVER: \"{registry_server}\"",
+                "AWS_ACCESS_KEY_ID: \"\"": f"AWS_ACCESS_KEY_ID: \"{access_id}\"",
+                "AWS_SECRET_ACCESS_KEY: \"\"": f"AWS_SECRET_ACCESS_KEY: \"{access_key}\"",
+                "EDITION: \"\"": f"EDITION: \"{edition}\"",
+                "SENSOR_NAME: \"\"": f"SENSOR_NAME: \"{sensor_name}\"",
+                "LOCATION: \"\"": f"LOCATION: \"{location}\"",
+                "CLIENT_CITY: \"\"": f"CLIENT_CITY: \"{client_city}\"",
+                "CLIENT_LATITUDE: \"\"": f"CLIENT_LATITUDE: \"{client_latitude}\"",
+                "CLIENT_LONGITUDE: \"\"": f"CLIENT_LONGITUDE: \"{client_longitude}\"",
+                "CLIENT_COUNTRY_CODE: \"\"": f"CLIENT_COUNTRY_CODE: \"{client_country_code}\"",
+                "CLIENT_COUNTRY_NAME: \"\"": f"CLIENT_COUNTRY_NAME: \"{client_country_name}\"",
+                "LICENSE_START_DATE: \"\"": f"LICENSE_START_DATE: \"{license_start_date}\"",
+                "LICENSE_END_DATE: \"\"": f"LICENSE_END_DATE: \"{license_end_date}\"",
+                "XDR_NIDS_STATUS: \"\"": f"XDR_NIDS_STATUS: \"{xdr_nids_status}\"",
+                "DATA_SHARING_MODE: \"\"": f"DATA_SHARING_MODE: \"{data_sharing_mode}\"",
+                "OPERATING_ENV: \"\"": f"OPERATING_ENV: \"{operating_env}\"",
+                "SENSOR_CREATE_COUNT: \"\"": f"SENSOR_CREATE_COUNT: \"{sensor_create_count}\"",
+                "AWS_DEFAULT_REGION: \"\"": f"AWS_DEFAULT_REGION: \"{xdr_default_region}\"",
+                "COMPANY_INDEX_NAME: \"\"": f"COMPANY_INDEX_NAME: \"{company_index_name}\""
+            }
+
+            # Updating the values in the content
+            updated_content = config_content
+            for old_key, new_key in keys_to_update.items():
+                updated_content = updated_content.replace(old_key, new_key)
+            # Writing the updated content back to the file
+            with open(filename, 'w') as config_file:
+                config_file.write(updated_content)
+                
+            print("Info: Config.yml updated with data from the database.")
+        else:
+            print(f"Failed to retrieve data. Status code: {response.status_code}")
+            sys.exit() 
+            
+# Main Function  
+def main():
+    n = len(sys.argv)
+    if n == 1:
+        read_me()
+    elif n == 2:  
+        arg = sys.argv[1]
+        if arg in ("-i", "install"):
+            install()   
+            sys.exit()
+        elif arg in ("-u", "uninstall"):
+            uninstall()
+            sys.exit()   
+        elif arg in ("-r", "reconfigure"):
+            reconfigure()     
+        elif arg in ("-h", "help"):
+            read_me()
+            sys.exit()    
+            
+# Calling Main Function        
+main()
+
+

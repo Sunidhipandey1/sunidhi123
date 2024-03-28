@@ -1,0 +1,24 @@
+[Unit]
+Description=xdr-nids-net
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=always
+RestartSec=5
+TimeoutSec=infinity
+
+# Stop network offloading and enable promiscous mode.
+ExecStartPre=-/bin/bash -c '/sbin/ethtool --offload $(/sbin/ip address | grep "^2: " | awk \'{ print $2 }\' | tr -d [:punct:]) rx off tx off'
+ExecStartPre=/bin/bash -c '/sbin/ethtool -K $(/sbin/ip address | grep "^2: " | awk \'{ print $2 }\' | tr -d [:punct:]) gso off gro off'
+ExecStartPre=/bin/bash -c '/sbin/ip link set $(/sbin/ip address | grep "^2: " | awk \'{ print $2 }\' | tr -d [:punct:]) promisc on'
+
+# Stopping already running docker services.
+ExecStartPre=-docker-compose -f /opt/zh-xdr-nids-client/compose/data_pipeline.yml down -v
+ExecStartPre=-docker-compose -f /opt/zh-xdr-nids-client/compose/data_pipeline.yml rm -v
+ExecStartPre=docker-compose -f /opt/zh-xdr-nids-client/compose/data_pipeline.yml pull
+ExecStart=docker-compose -f /opt/zh-xdr-nids-client/compose/data_pipeline.yml up
+ExecStop=docker-compose -f /opt/zh-xdr-nids-client/compose/data_pipeline.yml down -v
+
+[Install]
+WantedBy=multi-user.target

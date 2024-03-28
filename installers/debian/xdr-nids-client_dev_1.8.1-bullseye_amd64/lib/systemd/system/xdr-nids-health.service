@@ -1,0 +1,12 @@
+[Unit]
+Description=xdr-nids-health
+
+[Service]
+Restart=always
+RestartSec=10
+TimeoutSec=infinity
+
+ExecStart=/usr/local/bin/healthcheck 
+ 
+[Install]
+WantedBy=multi-user.target

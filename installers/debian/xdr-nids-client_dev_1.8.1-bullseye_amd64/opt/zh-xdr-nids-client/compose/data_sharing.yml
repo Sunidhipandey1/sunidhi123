@@ -1,0 +1,19 @@
+version: "3.5"
+
+volumes:
+  data:
+
+services:
+
+  datasharing:
+    container_name: data_sharing
+    restart: always
+    build: 
+      context: ./docker/data_sharing/.
+      dockerfile: Dockerfile
+    #image: "406116439221.dkr.ecr.us-east-2.amazonaws.com/data_sharing_xdr_nids:dev_amd64_1.8.1"
+    env_file:
+     - /etc/zh-xdr-nids-client/config.env
+    volumes:
+      - data:/var/log/data/
+

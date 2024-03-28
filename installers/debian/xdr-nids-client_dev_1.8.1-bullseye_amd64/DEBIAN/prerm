@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Copyright : Whizhack Technologies, India
+# Authors   : Team Devops
+
+#This function stops the xdr-nids-net xdr-nids-health service
+main () {
+    systemctl stop xdr-nids-net xdr-nids-health;
+}
+
+main

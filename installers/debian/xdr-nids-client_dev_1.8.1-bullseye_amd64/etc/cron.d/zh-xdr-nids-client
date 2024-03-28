@@ -1,0 +1,11 @@
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Performing scheduled reboot.
+33 */6 * * *    root    /opt/zh-xdr-nids-client/management/reboot-cleanup.sh; 
+
+# Performing scheduled machine update on mondays.
+33 3 * * 1     root    /opt/zh-xdr-nids-client/management/update-cleanup.sh; 
+
+# Performing scheduled credentials update.
+@reboot         root    /opt/zh-xdr-nids-client/management/credential-update.sh;

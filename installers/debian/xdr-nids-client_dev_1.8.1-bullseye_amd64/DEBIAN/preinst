@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Copyright : Whizhack Technologies, India
+# Authors : Team Devops
+
+package_installer () {
+    # This function downloads and installs required packages.
+
+    # Installing/ Updating the awscli.
+    if [ -f "/aws/install" ]; then
+        /aws/install --update
+    else
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" &&
+        unzip awscliv2.zip -d / &&
+        /aws/install;
+    fi
+}
+
+main () {
+    package_installer
+}
+
+main

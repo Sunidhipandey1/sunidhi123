@@ -1,0 +1,9 @@
+Package: zh-xdr-nids-client
+Version: 1.8.1
+Maintainer: Whizhack Developers <developers@whizhack.com>
+Depends: apt-transport-https, docker-compose, ca-certificates, curl,software-properties-common, rsync, awscli, python3-pip, unzip, ethtool
+Section: admin
+Homepage: http://xdr-dev.whizhack-intranet.com/login
+Priority: Extra
+Architecture: amd64
+Description: This package installs the xdr nids client software.
